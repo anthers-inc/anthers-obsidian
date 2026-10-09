@@ -2,13 +2,11 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";
-import { filesRoute, setResolveMap, setParsedNotes } from "./routes/files.js";
+import { filesRoute } from "./routes/files.js";
 import { searchRoute } from "./routes/search.js";
 import { graphRoute } from "./routes/graph.js";
 import { validateVault } from "./services/vault.js";
-import { parseAllNotes, buildFullResolveMap } from "./services/parser.js";
-import { buildSearchIndex } from "./services/search.js";
-import { buildGraph } from "./services/graph.js";
+import { initialBuild, startWatching } from "./rebuild.js";
 
 const app = new Hono()
   .use(logger())
@@ -36,24 +34,13 @@ const app = new Hono()
 
 // Startup: validate vault and build indexes
 if (import.meta.main) {
-  console.time("Startup");
   await validateVault();
-
-  const notes = await parseAllNotes();
-  const resolveMap = await buildFullResolveMap(notes);
-  setResolveMap(resolveMap);
-  setParsedNotes(notes);
-  console.log(`Resolve map: ${Object.keys(resolveMap).length} entries`);
-
-  buildSearchIndex(notes);
-  buildGraph(notes, resolveMap);
-
-  console.timeEnd("Startup");
+  await initialBuild();
+  startWatching();
+  console.log("Watching the vault for changes");
 }
 
 export default {
   port: Number(process.env.PORT ?? 3000),
   fetch: app.fetch,
 };
-
-export type AppType = typeof app;

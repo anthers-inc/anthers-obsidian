@@ -45,18 +45,20 @@ chmod 0600 "${OBSIDIAN_DIR}/obsidian.env"
 echo "  -> installing the Caddyfile and the sync ignore list"
 mkdir -p "${OBSIDIAN_DIR}/caddy/etc/caddy"
 install -m 0644 "${HERE}/caddy/Caddyfile" "${OBSIDIAN_DIR}/caddy/etc/caddy/Caddyfile"
+# The sync-layer half of the publish boundary, pre-installed as the folder's ignore list:
+# the internal material never arrives on this machine, whatever the pairing does.
+install -m 0644 "${HERE}/vault-sync-ignore.example" "${OBSIDIAN_DIR}/vault/.stignore"
+chown 1000:1000 "${OBSIDIAN_DIR}/vault/.stignore"
 
 cat <<EOF
 
-  Done. Three things before the first \`make up\`:
+  Done. Two things before the first \`make up\`:
 
   1. Point DNS for ${hostname} at this machine.
-  2. Copy ${HERE}/vault-sync-ignore.example to
-     ${OBSIDIAN_DIR}/vault/.stignore-fragment (or paste it into the sync GUI's ignore
-     field) — it is what keeps the internal wiki off this machine, and it matters.
-  3. The sync GUI's password is in ${OBSIDIAN_DIR}/obsidian.env. Reach the GUI with
-     \`make tunnel\` after the stack is up, pair your authoring machine, and share the
-     vault into /vault with the "Send Only" type on your side.
+  2. After the stack is up: \`make tunnel\`, pair your authoring machine in the sync GUI
+     (tunnel → http://localhost:8384), and share the vault into /vault with **Send Only**
+     set on your authoring side — this folder should never be edited here.
+     The vault's ignore list (.stignore) is already installed; leave it be.
 
   Then: make up
 EOF

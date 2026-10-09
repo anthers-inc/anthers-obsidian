@@ -156,6 +156,11 @@ export async function getMarkdownContent(relativePath: string): Promise<FileCont
   const raw = await Bun.file(fullPath).text();
   const { data, content } = matter(raw);
 
+  // 🚨 `task-hours` is stripped by the thing that publishes, never trusted to a folder
+  // rule: Anthers tracks no hours (it is client-work machinery from other projects), and
+  // if the field ever appears in a synced copy it must not survive into a public response.
+  delete data["task-hours"];
+
   return {
     path: relativePath,
     content,
@@ -193,6 +198,37 @@ export async function listAllMarkdownFiles(): Promise<string[]> {
         if (!canContainPublished(relPath)) continue;
         await walk(fullPath, relPath);
       } else if (entry.name.endsWith(".md") && isPublishedPath(relPath)) {
+        files.push(relPath);
+      }
+    }
+  }
+
+  await walk(VAULT_PATH, "");
+  return files;
+}
+
+/**
+ * Get a flat list of every publishable path — markdown AND structured (.base/.canvas) —
+ * the input the slug map is built from. Same walk listAllMarkdownFiles makes, keeping
+ * structured files too.
+ */
+export async function listPublishedFiles(): Promise<string[]> {
+  const files: string[] = [];
+
+  async function walk(dirPath: string, relDir: string) {
+    const entries = await readdir(dirPath, { withFileTypes: true });
+    for (const entry of entries) {
+      if (HIDE_FOLDERS.has(entry.name)) continue;
+      const fullPath = join(dirPath, entry.name);
+      const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
+
+      if (entry.isDirectory()) {
+        if (!canContainPublished(relPath)) continue;
+        await walk(fullPath, relPath);
+      } else if (
+        (isStructured(relPath) || entry.name.endsWith(".md")) &&
+        isPublishedPath(relPath)
+      ) {
         files.push(relPath);
       }
     }

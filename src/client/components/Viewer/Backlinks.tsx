@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useBacklinks } from "../../hooks/useBacklinks";
+import { useSlugMap } from "../../hooks/useSlugMap";
 
 interface BacklinksProps {
   path: string;
@@ -9,6 +10,7 @@ interface BacklinksProps {
 
 export default function Backlinks({ path }: BacklinksProps) {
   const { data } = useBacklinks(path);
+  const { data: slugMap } = useSlugMap();
   const [expanded, setExpanded] = useState(true);
 
   const backlinks = data?.backlinks ?? [];
@@ -26,15 +28,16 @@ export default function Backlinks({ path }: BacklinksProps) {
       {expanded && (
         <ul className="backlinks-list">
           {backlinks.map((bl) => {
-            const encoded = bl.source
-              .split("/")
-              .map(encodeURIComponent)
-              .join("/");
+            const slug = slugMap?.byPath[bl.source];
             return (
               <li key={bl.source} className="backlink-item">
-                <Link to={`/note/${encoded}`} className="backlink-source">
-                  {bl.sourceName}
-                </Link>
+                {slug ? (
+                  <Link to={`/${slug}`} className="backlink-source">
+                    {bl.sourceName}
+                  </Link>
+                ) : (
+                  <span className="backlink-source">{bl.sourceName}</span>
+                )}
                 {bl.context && (
                   <span className="backlink-context">{bl.context}</span>
                 )}

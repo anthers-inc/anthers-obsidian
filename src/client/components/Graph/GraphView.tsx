@@ -9,9 +9,11 @@ import {
   useSetSettings,
 } from "@react-sigma/core";
 import { useGraph } from "../../hooks/useGraph";
+import { useSlugMap } from "../../hooks/useSlugMap";
 
 function GraphLoader() {
   const { data } = useGraph();
+  const { data: slugMap } = useSlugMap();
   const loadGraph = useLoadGraph();
   const registerEvents = useRegisterEvents();
   const setSettings = useSetSettings();
@@ -65,16 +67,16 @@ function GraphLoader() {
     });
   }, [setSettings]);
 
-  // Handle node click → navigate to note
+  // Handle node click → navigate to the note's public slug
   useEffect(() => {
     registerEvents({
       clickNode: (event: { node: string }) => {
         const path = event.node;
-        const encoded = path.split("/").map(encodeURIComponent).join("/");
-        navigate(`/note/${encoded}`);
+        const slug = slugMap?.byPath[path];
+        if (slug) navigate(`/${slug}`);
       },
     });
-  }, [registerEvents, navigate]);
+  }, [registerEvents, navigate, slugMap]);
 
   return null;
 }

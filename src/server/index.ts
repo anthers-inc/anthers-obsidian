@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { serveStatic } from "hono/bun";

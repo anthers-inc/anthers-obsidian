@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { readdir, stat } from "node:fs/promises";
 import { join, resolve, relative, extname } from "node:path";
 import matter from "gray-matter";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useMemo } from "react";
 import { useVaultFiles, type TreeNode } from "../../hooks/useVaultFiles";
 import FileTreeNode from "./FileTreeNode";

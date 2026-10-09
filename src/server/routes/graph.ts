@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { getGraph, getBacklinks } from "../services/graph.js";

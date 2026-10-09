@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "../lib/api";
 import type { ResolveMap } from "../lib/markdown";

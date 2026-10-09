@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import MiniSearch from "minisearch";
 import type { ParsedNote } from "./parser.js";
 

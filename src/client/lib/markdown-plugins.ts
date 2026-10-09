@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import type MarkdownIt from "markdown-it";
 import type StateInline from "markdown-it/lib/rules_inline/state_inline.mjs";
 import { API_BASE } from "./api";

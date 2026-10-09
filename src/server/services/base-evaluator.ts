@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * Evaluates Obsidian .base files against parsed vault notes.
  *

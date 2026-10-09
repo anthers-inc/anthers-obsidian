@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Routes, Route } from "react-router-dom";
 import AppShell from "./components/Layout/AppShell";
 import NoteView from "./components/Viewer/NoteView";

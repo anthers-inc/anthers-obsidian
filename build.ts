@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 const result = await Bun.build({
   entrypoints: ["./src/client/index.html"],
   outdir: "./build",

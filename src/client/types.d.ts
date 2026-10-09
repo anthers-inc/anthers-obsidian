@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 declare module "markdown-it-obsidian-callouts" {
   import type MarkdownIt from "markdown-it";
   const plugin: MarkdownIt.PluginSimple;

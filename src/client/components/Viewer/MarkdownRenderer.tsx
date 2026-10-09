@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMarkdownRenderer, renderMarkdown, type ResolveMap } from "../../lib/markdown";

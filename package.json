@@ -1,6 +1,7 @@
 {
-  "name": "websidian",
-  "private": true,
+  "name": "anthers-obsidian",
+  "private": false,
+  "license": "Apache-2.0",
   "version": "0.1.0",
   "type": "module",
   "scripts": {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useLocation } from "react-router-dom";
 import { useNoteContent } from "../../hooks/useNoteContent";
 import { useResolveMap } from "../../hooks/useResolveMap";

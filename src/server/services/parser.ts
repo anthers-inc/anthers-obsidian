@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { extname, basename } from "node:path";
 import matter from "gray-matter";
 import { listAllMarkdownFiles, resolveVaultPath } from "./vault.js";

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { Hono } from "hono";
 import { search } from "../services/search.js";
 

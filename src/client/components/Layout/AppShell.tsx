@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo, useCallback } from "react";
 import { Link, Outlet } from "react-router-dom";
 import FileTree, { type SortMode } from "../Sidebar/FileTree";

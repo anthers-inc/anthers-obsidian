@@ -34,7 +34,7 @@ export default function AppShell() {
       {sidebarOpen && (
         <aside className="sidebar">
           <div className="sidebar-header">
-            <h2>Websidian</h2>
+            <h2>The Anthers Wiki</h2>
             <button
               className="sidebar-toggle"
               onClick={() => setSidebarOpen(false)}

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSlugMap } from "../../hooks/useSlugMap";
+import { hrefForPath } from "../../lib/links";
 
 // ── Types matching server output ──
 
@@ -51,11 +53,12 @@ function renderCellValue(value: unknown): string {
 
 function TableLayout({ view }: { view: EvaluatedView }) {
 	const navigate = useNavigate();
+	const { data: slugMap } = useSlugMap();
 
 	const handleRowClick = useCallback((path: string) => {
-		const encoded = path.split("/").map(encodeURIComponent).join("/");
-		navigate(`/note/${encoded}`);
-	}, [navigate]);
+		const href = hrefForPath(slugMap, path);
+		if (href) navigate(href);
+	}, [slugMap, navigate]);
 
 	return (
 		<div className="base-table-wrapper">
@@ -105,11 +108,12 @@ function TableLayout({ view }: { view: EvaluatedView }) {
 
 function CardsLayout({ view }: { view: EvaluatedView }) {
 	const navigate = useNavigate();
+	const { data: slugMap } = useSlugMap();
 
 	const handleCardClick = useCallback((path: string) => {
-		const encoded = path.split("/").map(encodeURIComponent).join("/");
-		navigate(`/note/${encoded}`);
-	}, [navigate]);
+		const href = hrefForPath(slugMap, path);
+		if (href) navigate(href);
+	}, [slugMap, navigate]);
 
 	// Skip file.name from card properties since it's the title
 	const cardColumns = view.columns.filter((c) => c.key !== "file.name");
@@ -152,11 +156,12 @@ function CardsLayout({ view }: { view: EvaluatedView }) {
 
 function ListLayout({ view }: { view: EvaluatedView }) {
 	const navigate = useNavigate();
+	const { data: slugMap } = useSlugMap();
 
 	const handleItemClick = useCallback((path: string) => {
-		const encoded = path.split("/").map(encodeURIComponent).join("/");
-		navigate(`/note/${encoded}`);
-	}, [navigate]);
+		const href = hrefForPath(slugMap, path);
+		if (href) navigate(href);
+	}, [slugMap, navigate]);
 
 	// Show a few key properties inline
 	const inlineColumns = view.columns.filter((c) => c.key !== "file.name").slice(0, 3);

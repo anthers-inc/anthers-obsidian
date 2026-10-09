@@ -2,6 +2,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearch } from "../../hooks/useSearch";
+import { useSlugMap } from "../../hooks/useSlugMap";
+import { hrefForPath } from "../../lib/links";
 
 interface QuickSwitcherProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ export default function QuickSwitcher({ isOpen, onClose }: QuickSwitcherProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const { data: slugMap } = useSlugMap();
 
   // Debounce query
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -40,11 +43,12 @@ export default function QuickSwitcher({ isOpen, onClose }: QuickSwitcherProps) {
 
   const navigateToResult = useCallback(
     (path: string) => {
-      const encoded = path.split("/").map(encodeURIComponent).join("/");
-      navigate(`/note/${encoded}`);
+      const href = hrefForPath(slugMap, path);
+      if (!href) return;
+      navigate(href);
       onClose();
     },
-    [navigate, onClose],
+    [slugMap, navigate, onClose],
   );
 
   function handleKeyDown(e: React.KeyboardEvent) {

@@ -68,6 +68,23 @@ code {
   letter-spacing: 0.05em;
 }
 
+.sidebar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-powered {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-decoration: none;
+}
+
+.sidebar-powered:hover {
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
 .sidebar-actions {
   display: flex;
   gap: 4px;

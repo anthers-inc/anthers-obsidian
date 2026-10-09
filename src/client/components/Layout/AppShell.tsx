@@ -7,7 +7,25 @@ import QuickSwitcher from "../Sidebar/QuickSwitcher";
 import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 
 export default function AppShell() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // First visit starts collapsed (readability); "1" persists an opened sidebar.
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return localStorage.getItem("anthers-sidebar-open") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setSidebarOpenPersisted = useCallback((next: boolean | ((v: boolean) => boolean)) => {
+    setSidebarOpen((v) => {
+      const value = typeof next === "function" ? next(v) : next;
+      try {
+        localStorage.setItem("anthers-sidebar-open", value ? "1" : "0");
+      } catch {
+        // Storage unavailable — the preference simply does not persist.
+      }
+      return value;
+    });
+  }, []);
   const [quickSwitcherOpen, setQuickSwitcherOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("name-asc");
   const [autoReveal, setAutoReveal] = useState(false);
@@ -23,7 +41,7 @@ export default function AppShell() {
     () => [
       { key: "k", meta: true, handler: () => setQuickSwitcherOpen(true) },
       { key: "o", meta: true, handler: () => setQuickSwitcherOpen(true) },
-      { key: "\\", meta: true, handler: () => setSidebarOpen((v) => !v) },
+      { key: "\\", meta: true, handler: () => setSidebarOpenPersisted((v) => !v) },
     ],
     [],
   );
@@ -34,10 +52,20 @@ export default function AppShell() {
       {sidebarOpen && (
         <aside className="sidebar">
           <div className="sidebar-header">
-            <h2>The Anthers Wiki</h2>
+            <div className="sidebar-title">
+              <h2>The Anthers Wiki</h2>
+              <a
+                className="sidebar-powered"
+                href="https://obsidian.md"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Powered by Obsidian
+              </a>
+            </div>
             <button
               className="sidebar-toggle"
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => setSidebarOpenPersisted(false)}
               title="Close sidebar"
             >
               ✕
@@ -73,7 +101,7 @@ export default function AppShell() {
         {!sidebarOpen && (
           <button
             className="sidebar-open-btn"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setSidebarOpenPersisted(true)}
             title="Open sidebar"
           >
             ☰

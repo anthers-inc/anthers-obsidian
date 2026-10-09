@@ -67,15 +67,26 @@ jobs:
     timeout-minutes: 10
     needs: build
     if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
+
+      # The package starts private on a new repository, so even a same-repo pull must
+      # authenticate — and keeping the login costs nothing regardless of its later visibility.
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run the suite inside the published image
         run: |
           docker run --rm \
             -v "$PWD/src:/app/src" \
             -w /app \
-            -e BUN_TEST_KILL_ON_EXIT=1 \
             ghcr.io/anthers-inc/anthers-obsidian:${{ github.sha }} \
             bun test
 

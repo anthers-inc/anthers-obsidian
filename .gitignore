@@ -2,3 +2,5 @@ node_modules/
 build/
 .obsidian/
 .env
+.test-vault-fixture/
+*.log

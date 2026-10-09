@@ -4,23 +4,16 @@ import AppShell from "./components/Layout/AppShell";
 import NoteView from "./components/Viewer/NoteView";
 import GraphView from "./components/Graph/GraphView";
 
-function WelcomePage() {
-  return (
-    <div className="welcome">
-      <h1>Websidian</h1>
-      <p>Select a note from the sidebar to get started.</p>
-    </div>
-  );
-}
-
 export default function App() {
-  return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/note/*" element={<NoteView />} />
-        <Route path="/graph" element={<GraphView />} />
-      </Route>
-    </Routes>
-  );
+	return (
+		<Routes>
+			<Route element={<AppShell />}>
+				{/* The site root is the vault's Anthers Overview — the wiki's home page. */}
+				<Route path="/" element={<NoteView />} />
+				<Route path="/graph" element={<GraphView />} />
+				{/* Every other address is a slug (two-level, JD-stripped) resolved by NoteView. */}
+				<Route path="/*" element={<NoteView />} />
+			</Route>
+		</Routes>
+	);
 }

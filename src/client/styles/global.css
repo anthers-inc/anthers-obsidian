@@ -736,3 +736,44 @@ div.sigma-container {
     padding: 12px;
   }
 }
+
+/* Task-note properties — the strip above a published task's body */
+.note-properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  padding: 10px 14px;
+  margin: 8px 0 20px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.note-property {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.note-property-name {
+  color: var(--text-muted);
+}
+
+.note-property-value {
+  color: var(--text-normal);
+}
+
+/* The license line — every published page carries it */
+.license-line {
+  margin-top: 40px;
+  padding-top: 14px;
+  border-top: 1px solid var(--background-modifier-border);
+  color: var(--text-faint);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.license-line a {
+  color: var(--text-muted);
+}

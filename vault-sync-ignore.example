@@ -22,21 +22,17 @@
 // The publish boundary's excluded roots.
 (?d)/Internal Wiki
 (?d)/90-99 Agents
-// 00-09 Metafiles: everything except the public task root (which publishes).
+// 00-09 Metafiles: everything except the task roots — the tasks ARE published copy.
+// ⚠️ Two lines only: the star excludes the folder's direct children, the negation
+// re-includes the tasks root, and everything UNDER it was never matched by the star in
+// the first place. Do not add a "/01 Tasks/*" exclude here — it eats the task notes.
 (?d)/00-09 Metafiles/*
 !/00-09 Metafiles/01 Tasks
-(?d)/00-09 Metafiles/01 Tasks/*
-!/00-09 Metafiles/01 Tasks/Templates
-
-// Obsidian's own machinery — nothing in a .obsidian directory belongs on a public server.
+// Obsidian and sync machinery.
 (?d)/.obsidian
 (?d)/.trash
-
-// Sync machinery, if the authoring side carries it.
 (?d)/.stfolder
 (?d)/.stversions
-
-// The base files the allowlist does not name. The server would refuse them anyway;
-// not syncing them is the cleaner statement.
+// Root-level base files other than the board (the server also refuses them).
 (?d)/*.base
 !/Anthers Tasks.base

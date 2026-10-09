@@ -1,6 +1,7 @@
 import { extname, basename } from "node:path";
 import matter from "gray-matter";
 import { listAllMarkdownFiles, resolveVaultPath } from "./vault.js";
+import { isPublishedPath, canContainPublished } from "./boundary.js";
 
 export interface ParsedNote {
   path: string;
@@ -155,8 +156,10 @@ export async function buildFullResolveMap(notes: ParsedNote[]): Promise<ResolveM
       const fullPath = join(dirPath, entry.name);
       const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
+        // Publish boundary: excluded subtrees contribute no resolvable assets.
+        if (!canContainPublished(relPath)) continue;
         await walkBinaries(fullPath, relPath);
-      } else if (!entry.name.endsWith(".md")) {
+      } else if (!entry.name.endsWith(".md") && isPublishedPath(relPath)) {
         const key = entry.name.toLowerCase();
         if (!map[key]) map[key] = [];
         map[key].push(relPath);

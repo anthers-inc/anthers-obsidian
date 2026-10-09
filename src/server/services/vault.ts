@@ -1,6 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import { join, resolve, relative, extname } from "node:path";
 import matter from "gray-matter";
+import { isPublishedPath, canContainPublished } from "./boundary.js";
 
 export interface TreeNode {
   name: string;
@@ -57,6 +58,21 @@ export function resolveVaultPath(relativePath: string): string {
 }
 
 /**
+ * The publish-boundary read guard: resolve the traversal check first, then the boundary.
+ * Throws a synthetic ENOENT for an unpublished path — identical to the missing-file answer,
+ * so the 404 never confirms an unpublished path exists.
+ */
+export function resolvePublishedPath(relativePath: string): string {
+  const resolved = resolveVaultPath(relativePath);
+  if (!isPublishedPath(relativePath)) {
+    const err = new Error("ENOENT") as NodeJS.ErrnoException;
+    err.code = "ENOENT";
+    throw err;
+  }
+  return resolved;
+}
+
+/**
  * Recursively build the directory tree for the vault.
  */
 async function buildTree(dirPath: string, relDir: string): Promise<TreeNode[]> {
@@ -71,6 +87,8 @@ async function buildTree(dirPath: string, relDir: string): Promise<TreeNode[]> {
     const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
 
     if (entry.isDirectory()) {
+      // Publish boundary: prune the subtree entirely when nothing under it can publish.
+      if (!canContainPublished(relPath)) continue;
       const children = await buildTree(fullPath, relPath);
       nodes.push({
         name: entry.name,
@@ -79,6 +97,8 @@ async function buildTree(dirPath: string, relDir: string): Promise<TreeNode[]> {
         children,
       });
     } else {
+      // Publish boundary at the file level: a file the boundary excludes is not in the tree.
+      if (!isPublishedPath(relPath)) continue;
       try {
         const fileStat = await stat(fullPath);
         nodes.push({
@@ -130,7 +150,7 @@ export function invalidateTreeCache(): void {
  * Read a markdown file, parsing frontmatter and returning structured content.
  */
 export async function getMarkdownContent(relativePath: string): Promise<FileContent> {
-  const fullPath = resolveVaultPath(relativePath);
+  const fullPath = resolvePublishedPath(relativePath);
   const fileStat = await stat(fullPath);
   const raw = await Bun.file(fullPath).text();
   const { data, content } = matter(raw);
@@ -147,7 +167,7 @@ export async function getMarkdownContent(relativePath: string): Promise<FileCont
  * Read a binary file and return it with the appropriate MIME type.
  */
 export async function getBinaryFile(relativePath: string): Promise<{ data: ArrayBuffer; mimeType: string }> {
-  const fullPath = resolveVaultPath(relativePath);
+  const fullPath = resolvePublishedPath(relativePath);
   const ext = extname(fullPath).toLowerCase();
   const mimeType = MIME_TYPES[ext] ?? "application/octet-stream";
   const data = await Bun.file(fullPath).arrayBuffer();
@@ -168,8 +188,10 @@ export async function listAllMarkdownFiles(): Promise<string[]> {
       const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
 
       if (entry.isDirectory()) {
+        // Publish boundary: excluded subtrees are not even walked.
+        if (!canContainPublished(relPath)) continue;
         await walk(fullPath, relPath);
-      } else if (entry.name.endsWith(".md")) {
+      } else if (entry.name.endsWith(".md") && isPublishedPath(relPath)) {
         files.push(relPath);
       }
     }
@@ -220,7 +242,7 @@ export function isStructured(relativePath: string): boolean {
  * Read a structured file (.base or .canvas) and return its raw text content.
  */
 export async function getStructuredContent(relativePath: string): Promise<{ path: string; raw: string; modified: string }> {
-  const fullPath = resolveVaultPath(relativePath);
+  const fullPath = resolvePublishedPath(relativePath);
   const fileStat = await stat(fullPath);
   const raw = await Bun.file(fullPath).text();
   return {

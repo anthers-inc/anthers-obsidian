@@ -60,6 +60,13 @@ export function normalizePath(p: string): string {
 export function isPublishedPath(relativePath: string): boolean {
 	const p = normalizePath(relativePath);
 
+	// 🚨 Dotfiles and dot-folders never publish: `.stignore`, `.agents/`, `.obsidian/`,
+	// `.trash/` are machinery or working state, and the boundary must not depend on the
+	// exclusion list remembering each one — ANY dot-prefixed segment fails the check.
+	if (p.split("/").some((seg) => seg.startsWith("."))) {
+		return false;
+	}
+
 	const matchingExcludes = EXCLUDE.filter((ex) => p === ex || p.startsWith(`${ex}/`));
 
 	if (matchingExcludes.length === 0) {

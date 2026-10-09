@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The publishing stack: the vault-reading server, the sync that feeds it, TLS in front.
+#
+# 🎚 **The same bundle at two sizes, as with the node bundle.** Anthers running the wiki at
+# anthers.wiki and a self-hoster publishing their own vault are this file at two settings:
+# the hostname, and the publish boundary they state in the environment. There is no second
+# compose file and no second image.
+#
+# ⚠️ **The services on this stack are deliberately quiet about the network.** The app reads
+# `/vault` read-only and binds nothing it does not answer; the sync engine is the only
+# service with an inbound data path (22000, 21027), because syncing is its whole job; and
+# the sync engine's GUI is reachable only through the host's loopback — pair devices over
+# an SSH tunnel, never over a public port. Caddy answers 80/443 and terminates TLS for the
+# one hostname the env file names.
+#
+#   sudo ./scripts/setup.sh wiki.example.org   # once, before the first `make up`
+#   make up                                    # build + start everything
+#   make tunnel                                # the SSH command that reaches the sync GUI
+services:
+  # ─── The publishing server ───
+  app:
+    build: .
+    image: ghcr.io/anthers-inc/anthers-obsidian:latest
+    container_name: anthers-obsidian
+    restart: unless-stopped
+    depends_on:
+      - sync
+    env_file:
+      # Resolved from the deploy directory: the setup script writes it beside the vault,
+      # not inside the repository. OBSIDIAN_DIR is where everything the stack keeps lives.
+      - ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env
+    volumes:
+      # Read-only, always. The server has no write path into the vault by design — the
+      # vault on the authoring machines is the only source, and this copy is derived.
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
+        target: /vault
+        read_only: true
+    ports:
+      # Loopback only — health checks and curling without TLS in front.
+      - "127.0.0.1:3000:3000"
+
+  # ─── The sync engine, pulling from the authoring machines ───
+  sync:
+    image: syncthing/syncthing:2.1.6
+    container_name: anthers-obsidian-sync
+    restart: unless-stopped
+    # Same uid the app runs as (the Dockerfile's `bun` user), so what the sync writes,
+    # the app reads without permission gymnastics. setup.sh chowns the directories to it.
+    user: "1000:1000"
+    environment:
+      # Bind inside the container so the loopback-only port map below can reach the GUI;
+      # the map is what keeps the public internet away from it.
+      STGUIADDRESS: 0.0.0.0:8384
+    volumes:
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/syncthing/config
+        target: /var/syncthing/config
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
+        target: /vault
+    ports:
+      - "127.0.0.1:8384:8384"
+      # The data and discovery paths. A droplet has no NAT problem; without these Syncthing
+      # still works through relays, just slower and through somebody else's server.
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
+
+  # ─── TLS, and the only public door ───
+  caddy:
+    image: caddy:2
+    container_name: anthers-obsidian-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    env_file:
+      - ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # The Caddyfile the setup script installs beside the vault — the running stack reads
+      # the deployed copy, not the repository's.
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/caddy/etc/caddy/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# TLS for the publishing host, and the only public door into the stack.
+#
+# The hostname is written down exactly once, as {$WIKI_HOSTNAME} in obsidian.env — the same
+# rule the node bundle states: a Caddyfile with the name baked in is a second place to change
+# it and the one people forget.
+#
+# ⚠️ **This server is a public reader with no accounts.** Nothing here authenticates, so the
+# TLS story is ordinary: one name, one certificate, one reverse proxy. If you are running a
+# private vault through this stack instead, set WIKI_BASIC_AUTH and add
+# `basic_auth / {*$WIKI_BASIC_AUTH_USER*} {*$WIKI_BASIC_AUTH_PASSWORD_HASH*}` — none of that
+# is Anthers' shape, which is why it is not written in.
+
+{$WIKI_HOSTNAME} {
+	# Compress the text answers; the payload is markdown-rendered HTML and JSON indexes.
+	encode zstd gzip
+
+	reverse_proxy app:3000
+
+	header {
+		# The app sets the security headers itself (nosniff, frame-deny, referrer, CSP);
+		# these are the transport-level ones Caddy owns.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-X-Powered-By
+	}
+
+	# Health checks from uptime monitors answer without touching the app.
+	respond /up 200
+}

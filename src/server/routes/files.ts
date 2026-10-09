@@ -6,14 +6,17 @@ import {
 	getBinaryFile,
 	getStructuredContent,
 	resolveVaultPath,
+	listPublishedFiles,
 	isMarkdown,
 	isStructured,
 } from "../services/vault.js";
 import type { ResolveMap, ParsedNote } from "../services/parser.js";
+import type { SlugMap } from "../services/slugs.js";
 import { evaluateBase } from "../services/base-evaluator.js";
 
 let resolveMap: ResolveMap = {};
 let parsedNotes: ParsedNote[] = [];
+let slugMap: SlugMap = { bySlug: {}, byPath: {} };
 
 export function setResolveMap(map: ResolveMap) {
 	resolveMap = map;
@@ -23,6 +26,18 @@ export function setParsedNotes(notes: ParsedNote[]) {
 	parsedNotes = notes;
 }
 
+export async function setSlugMapFromVault() {
+	// The slug map comes from the publishable file list (markdown + structured), not the
+	// parsed notes — a .base or .canvas publishes a slug too.
+	const paths = await listPublishedFiles();
+	const { buildSlugMap } = await import("../services/slugs.js");
+	slugMap = buildSlugMap(paths);
+}
+
+export function getSlugMap(): SlugMap {
+	return slugMap;
+}
+
 export const filesRoute = new Hono()
 	.get("/tree", async (c) => {
 		const tree = await getTree();
@@ -30,6 +45,9 @@ export const filesRoute = new Hono()
 	})
 	.get("/resolve-map", (c) => {
 		return c.json(resolveMap);
+	})
+	.get("/slug-map", (c) => {
+		return c.json(slugMap);
 	})
 	.get("/*", async (c) => {
 		const relativePath = c.req.path.replace(/^\/api\/files\//, "");

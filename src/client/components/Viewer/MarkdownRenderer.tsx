@@ -6,19 +6,21 @@ import { createMarkdownRenderer, renderMarkdown, type ResolveMap } from "../../l
 interface MarkdownRendererProps {
   content: string;
   resolveMap: ResolveMap;
+  slugByPath?: Record<string, string>;
 }
 
 export default function MarkdownRenderer({
   content,
   resolveMap,
+  slugByPath,
 }: MarkdownRendererProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   const html = useMemo(() => {
-    const md = createMarkdownRenderer(resolveMap);
+    const md = createMarkdownRenderer(resolveMap, slugByPath);
     return renderMarkdown(md, content);
-  }, [content, resolveMap]);
+  }, [content, resolveMap, slugByPath]);
 
   // Intercept clicks on internal links for client-side navigation
   useEffect(() => {
@@ -32,8 +34,9 @@ export default function MarkdownRenderer({
       const href = target.getAttribute("href");
       if (!href) return;
 
-      // Only intercept internal /note/ links
-      if (href.startsWith("/note/")) {
+      // Internal-only: the site's own slugs. External URLs, mailto and the API are untouched,
+      // and an inert (href-less) wikilink never reaches this branch at all.
+      if (href.startsWith("/") && !href.startsWith("/api") && !href.startsWith("/graph")) {
         e.preventDefault();
         navigate(href);
       }

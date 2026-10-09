@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { TreeNode } from "../../hooks/useVaultFiles";
+import { useSlugMap, slugFromPathname } from "../../hooks/useSlugMap";
 
 interface FileTreeNodeProps {
   node: TreeNode;
@@ -36,16 +37,19 @@ export default function FileTreeNode({
   );
   const location = useLocation();
   const nodeRef = useRef<HTMLAnchorElement>(null);
+  const { data: slugMap } = useSlugMap();
 
-  const currentNotePath = decodeURIComponent(
-    location.pathname.replace(/^\/note\//, ""),
-  );
+  // The address is a slug; the slug map turns it into the vault path the tree compares
+  // against. The site root is the overview.
+  const currentNotePath = slugMap?.bySlug[slugFromPathname(location.pathname)];
 
   const isActive = node.type === "file" && currentNotePath === node.path;
 
   // Check if this directory is an ancestor of the current note
   const isAncestorOfActive =
-    node.type === "directory" && currentNotePath.startsWith(node.path + "/");
+    node.type === "directory" &&
+    currentNotePath !== undefined &&
+    currentNotePath.startsWith(node.path + "/");
 
   // Respond to expand/collapse all (expandGeneration changes)
   // Even values = collapse all, odd values = expand all
@@ -83,8 +87,8 @@ export default function FileTreeNode({
     });
   }, [node.path]);
 
-  // Encode each path segment individually to preserve slashes in the URL
-  const notePath = `/note/${node.path.split("/").map(encodeURIComponent).join("/")}`;
+  // Link by the public slug — the tree never puts a vault path in a URL.
+  const notePath = slugMap?.byPath[node.path] ?? "#";
 
   if (node.type === "directory") {
     return (

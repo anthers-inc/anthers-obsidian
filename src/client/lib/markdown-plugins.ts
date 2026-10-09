@@ -21,8 +21,13 @@ function encodePath(path: string): string {
 /**
  * markdown-it plugin for Obsidian [[wikilinks]].
  * Handles: [[Page]], [[Page|Label]], [[Page#Section]], [[Page#Section|Label]]
+ *
+ * A resolved link whose slug exists gets the slug as its href. A target that resolves to
+ * a path but carries no slug — the public-links-into-unpublished case — or one that
+ * resolves to nothing, renders INERT: no href at all, styled unresolved. The public wiki
+ * never emits a dead link, and it certainly never emits a link to what did not publish.
  */
-export function wikilinkPlugin(md: MarkdownIt, resolveMap: ResolveMap) {
+export function wikilinkPlugin(md: MarkdownIt, resolveMap: ResolveMap, slugByPath?: Record<string, string>) {
   md.inline.ruler.push("wikilink", (state: StateInline, silent: boolean) => {
     const src = state.src;
     const pos = state.pos;
@@ -51,18 +56,18 @@ export function wikilinkPlugin(md: MarkdownIt, resolveMap: ResolveMap) {
     const target = hashIdx !== -1 ? raw.substring(0, hashIdx).trim() : raw.trim();
     const section = hashIdx !== -1 ? raw.substring(hashIdx) : "";
 
-    // Resolve to a path
+    // Resolve to a path, then the path to its public slug
     const resolved = target ? resolveLink(target, resolveMap) : null;
-    let href: string;
-    if (resolved) {
-      href = `/note/${encodePath(resolved)}${section ? encodeURIComponent(section) : ""}`;
-    } else {
-      href = `/note/${encodeURIComponent(target)}`;
-    }
+    const slug = resolved ? slugByPath?.[resolved] : undefined;
 
     const tokenOpen = state.push("link_open", "a", 1);
-    tokenOpen.attrSet("href", href);
-    tokenOpen.attrSet("class", resolved ? "wikilink" : "wikilink wikilink-unresolved");
+    if (slug) {
+      tokenOpen.attrSet("href", `/${slug}${section ? encodeURIComponent(section) : ""}`);
+      tokenOpen.attrSet("class", "wikilink");
+    } else {
+      // Inert: an anchor with no href answers nothing and follows nothing.
+      tokenOpen.attrSet("class", "wikilink wikilink-unresolved");
+    }
     tokenOpen.markup = "wikilink";
 
     const tokenText = state.push("text", "", 0);

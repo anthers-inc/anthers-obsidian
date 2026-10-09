@@ -18,7 +18,7 @@ import { invalidateTreeCache } from "./services/vault.js";
 import { parseAllNotes, buildFullResolveMap } from "./services/parser.js";
 import { buildSearchIndex } from "./services/search.js";
 import { buildGraph } from "./services/graph.js";
-import { setResolveMap, setParsedNotes } from "./routes/files.js";
+import { setResolveMap, setParsedNotes, setSlugMapFromVault } from "./routes/files.js";
 
 const DEBOUNCE_MS = 500;
 
@@ -39,6 +39,7 @@ export async function rebuildAll(): Promise<void> {
 		setParsedNotes(notes);
 		buildSearchIndex(notes);
 		buildGraph(notes, resolveMap);
+		await setSlugMapFromVault();
 	} finally {
 		rebuilding = false;
 	}

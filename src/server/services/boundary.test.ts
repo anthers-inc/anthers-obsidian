@@ -55,7 +55,15 @@ describe("boundary — the default publish shape", () => {
 		expect(isPublishedPath("Some Canvas.canvas")).toBe(true);
 	});
 
-	test("a published attachment folder's file publishes where the folder rules put it", () => {
+	test("dotfiles and dot-folders never publish, regardless of what they are", () => {
+		expect(isPublishedPath(".stignore")).toBe(false);
+		expect(isPublishedPath(".agents/audits/broken-links.md")).toBe(false);
+		expect(isPublishedPath(".obsidian/app.json")).toBe(false);
+		expect(isPublishedPath(".trash/something.md")).toBe(false);
+		expect(canContainPublished(".agents")).toBe(false);
+	});
+
+	test("a public attachment folder's file publishes where the folder rules put it", () => {
 		// The certified AOI PDF's home: a subject-area folder, inside the published set.
 		expect(isPublishedPath("60-69 The Organization/62 Filings & Public Records/Certified AOI for Anthers 20260828.pdf")).toBe(true);
 	});

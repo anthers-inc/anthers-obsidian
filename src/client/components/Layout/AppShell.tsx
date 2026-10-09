@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useState, useMemo, useCallback } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import FileTree, { type SortMode } from "../Sidebar/FileTree";
 import SidebarToolbar from "../Sidebar/SidebarToolbar";
 import QuickSwitcher from "../Sidebar/QuickSwitcher";
@@ -51,9 +51,6 @@ export default function AppShell() {
             >
               Search...
             </button>
-            <Link to="/graph" className="sidebar-action-btn">
-              Graph
-            </Link>
           </div>
           <SidebarToolbar
             sortMode={sortMode}

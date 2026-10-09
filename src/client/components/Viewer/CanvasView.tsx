@@ -3,6 +3,8 @@ import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { createMarkdownRenderer, renderMarkdown, type ResolveMap } from "../../lib/markdown";
 import { API_BASE } from "../../lib/api";
+import { useSlugMap } from "../../hooks/useSlugMap";
+import { hrefForPath } from "../../lib/links";
 
 // ── JSON Canvas types ──
 
@@ -111,6 +113,7 @@ function isImagePath(path: string): boolean {
 export default function CanvasView({ data, resolveMap }: CanvasViewProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const navigate = useNavigate();
+	const { data: slugMap } = useSlugMap();
 
 	const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
 	const [dragging, setDragging] = useState(false);
@@ -217,20 +220,25 @@ export default function CanvasView({ data, resolveMap }: CanvasViewProps) {
 					);
 				}
 				const displayName = filePath.split("/").pop()?.replace(/\.md$/, "") ?? filePath;
-				const encoded = filePath.split("/").map(encodeURIComponent).join("/");
+				const href = hrefForPath(slugMap, filePath);
 				return (
 					<div className="canvas-node-content canvas-file-content">
 						<div className="canvas-file-header">
-							<a
-								href={`/note/${encoded}`}
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									navigate(`/note/${encoded}`);
-								}}
-							>
-								{displayName}
-							</a>
+							{href ? (
+								<a
+									href={href}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										navigate(href);
+									}}
+								>
+									{displayName}
+								</a>
+							) : (
+								// The referenced file did not publish — the link renders inert, never dead.
+								<span className="wikilink wikilink-unresolved">{displayName}</span>
+							)}
 						</div>
 					</div>
 				);

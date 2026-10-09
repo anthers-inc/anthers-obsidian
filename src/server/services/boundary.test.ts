@@ -14,6 +14,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { isPublishedPath, canContainPublished, normalizePath } from "./boundary.js";
 
@@ -87,7 +88,9 @@ describe("boundary — path normalization", () => {
 
 describe("boundary — through the actual routes", () => {
 	let app: { fetch: (req: Request) => Promise<Response> };
-	const FIXTURE = join(import.meta.dir, "../../../.test-vault-fixture");
+	// The fixture lives in the OS temp dir, not the repository — the tests may run inside
+	// the shipped image as an unprivileged user, where the repo root is not writable.
+	const FIXTURE = join(tmpdir(), "anthers-obsidian-boundary-fixture");
 
 	beforeAll(async () => {
 		process.env.VAULT_PATH = FIXTURE;

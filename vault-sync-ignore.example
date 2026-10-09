@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The ignore list the publishing host's sync folder carries.
+#
+# 🚨 **This is the sync-layer half of the publish boundary, and it is belt to the server's
+# suspenders — both wear it.** The server refuses to serve anything outside its publish
+# boundary even if this file were empty; this file is what keeps the internal material
+# from ever *arriving* on a machine whose only job is to be public. Two independent
+# enforcement points, because the consequences are asymmetric: the boundary refusing at
+# serve time is one bug away from a leak; the bytes never landing is not a bug away from
+# anything.
+#
+# ⚠️ **Keep this file and the boundary's defaults in step.** The boundary decides what the
+# *server* will serve; this decides what the *folder* will hold. If you widen one and not
+# the other, the wider one is your true boundary — write that down rather than discovering
+# it in a log.
+#
+# Syntax: Syncthing's ignore patterns (https://docs.syncthing.net/users/ignoring), one
+# per line. `(?d)` marks a pattern safe to delete files over — everything here is, because
+# nothing on this machine is authoritative.
+
+// The publish boundary's excluded roots.
+(?d)/Internal Wiki
+(?d)/90-99 Agents
+// 00-09 Metafiles: everything except the public task root (which publishes).
+(?d)/00-09 Metafiles/*
+!/00-09 Metafiles/01 Tasks
+(?d)/00-09 Metafiles/01 Tasks/*
+!/00-09 Metafiles/01 Tasks/Templates
+
+// Obsidian's own machinery — nothing in a .obsidian directory belongs on a public server.
+(?d)/.obsidian
+(?d)/.trash
+
+// Sync machinery, if the authoring side carries it.
+(?d)/.stfolder
+(?d)/.stversions
+
+// The base files the allowlist does not name. The server would refuse them anyway;
+// not syncing them is the cleaner statement.
+(?d)/*.base
+!/Anthers Tasks.base

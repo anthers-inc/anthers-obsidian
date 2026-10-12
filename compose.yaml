@@ -15,7 +15,7 @@
 #
 #   sudo ./scripts/setup.sh wiki.example.org   # once, before the first `make up`
 #   make up                                    # build + start everything
-#   make sync-token                            # mint the Obsidian Sync auth (once)
+#   make obsidian-login                        # 2FA accounts: interactive login, once
 services:
   # ─── The publishing server ───
   app:
@@ -41,40 +41,34 @@ services:
       - "127.0.0.1:3000:3000"
 
   # ─── The sync engine, fed by Obsidian Sync ───
-  # obsidian-headless in the official CLI, in the community's Docker wrapper (chosen over
-  # a homegrown image for its healthcheck, secret-file support and root-dropping
-  # entrypoint). It joins the account as one more device named by DEVICE_NAME, pulls the
-  # vault in SYNC_MODE, and holds no listening port — outbound HTTPS is the whole wire.
+  # obsidian-headless in the house image — the port of Cumulus's implementation,
+  # with the publisher's posture (mirror-remote, no config sync, a stated
+  # exclusion belt) enforced in the entrypoint. It joins the account as one more
+  # device and holds no listening port: outbound HTTPS to Sync is the whole wire.
   sync:
-    # Pinned to the obsidian-headless version the tag bakes in (0.0.14 here); the image
-    # also publishes :latest, which rebuilds as new CLI versions land.
-    image: ghcr.io/crosbyh/obsidian-headless-sync-docker:0.0.14
+    build: ./obsidian-sync
+    image: anthers-obsidian-sync:latest
     container_name: anthers-obsidian-sync
     restart: unless-stopped
     env_file:
       - ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env
-    environment:
-      # Same uid the app runs as (the image's `bun` user), so what the sync writes,
-      # the app reads without permission gymnastics. The wrapper drops to these after
-      # its one-time root start has fixed ownership.
-      PUID: "1000"
-      PGID: "1000"
+    healthcheck:
+      # The image has none of its own; the app's deploy verification reads this.
+      test: ["CMD", "ob", "sync-status", "--path", "/vaults/Anthers-Wiki"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     volumes:
       - type: bind
         source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
-        target: /vault
+        target: /vaults/Anthers-Wiki
       # The CLI's identity — token cache, device registration, the sync database.
-      # Mounted so the device survives container recreation instead of re-enrolling
-      # under the account every time the stack restarts.
+      # Mounted so the device survives container recreation instead of
+      # re-enrolling under the account every time the stack restarts.
       - type: bind
         source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/sync-state
-        target: /data
-      # The two credentials, mounted as files the env points *_FILE at — values in env
-      # variables show up in docker inspect; files on a 0700 directory do not.
-      - type: bind
-        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/secrets
-        target: /secrets
-        read_only: true
+        target: /state
 
   # ─── TLS, and the only public door ───
   caddy:

@@ -58,11 +58,11 @@ pull: ## Update the running images to their pinned versions
 restart: ## Restart the app container (the vault re-indexes on boot)
 	docker compose restart app
 
-.PHONY: sync-token
-sync-token: ## One-time interactive login that mints the Obsidian Sync auth token
-	@echo "Logging in interactively — the printed OBSIDIAN_AUTH_TOKEN goes into"
-	@echo "  \${OBSIDIAN_DIR:-/srv/anthers-obsidian}/secrets/obsidian_token"
-	@docker run --rm -it ghcr.io/crosbyh/obsidian-headless-sync-docker:0.0.14 get-token
+.PHONY: obsidian-login
+obsidian-login: ## Interactive `ob login` in the sync engine's own identity (2FA accounts; the token persists in sync-state)
+	@echo "Log in interactively — the token persists in the sync-state volume afterwards;"
+	@echo "after this, the container needs no credential values at all."
+	@docker compose run --rm --entrypoint sh sync -c 'gosu 1000:1000 env HOME=/state ob login'
 
 .PHONY: status
 status: ## Health, and what the server's boundary is currently serving

@@ -58,10 +58,15 @@ fix_owner() {
 	[ "$(stat -c '%u:%g' "$1")" = "$RUN_UID:$RUN_GID" ] || chown -R -- "$RUN_UID:$RUN_GID" "$1"
 }
 
-# ob writes its config to /state/.config/obsidian-headless; repair /state as
-# a whole (auth token, per-vault sync config, and this directory together)
+# ob writes its config to /state/.config/obsidian-headless; repair the config
+# tree recursively on every start — the directories get created as root by the
+# mkdir, and a top-level-only check leaves the inner directory locking the sync
+# user out of its own token (found on the publishing droplet's first link,
+# 2026-10-12). The tree is tiny — a token, one config per vault — so the cost is
+# nothing; /state gets the cheap top-level repair like before.
 fix_owner /state
-[ -d /state/.config/obsidian-headless ] || { mkdir -p /state/.config/obsidian-headless; fix_owner /state; }
+mkdir -p /state/.config/obsidian-headless
+chown -R -- "$RUN_UID:$RUN_GID" /state/.config
 
 # The vault directory must be mounted
 if [ ! -d "${VAULT_PATH}" ]; then

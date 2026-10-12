@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "websidian",
+      "name": "anthers-obsidian",
       "dependencies": {
         "@hackmd/markdown-it-task-lists": "^2.1.4",
         "@react-sigma/core": "^5.0.6",

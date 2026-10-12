@@ -8,15 +8,14 @@
 # compose file and no second image.
 #
 # ⚠️ **The services on this stack are deliberately quiet about the network.** The app reads
-# `/vault` read-only and binds nothing it does not answer; the sync engine is the only
-# service with an inbound data path (22000, 21027), because syncing is its whole job; and
-# the sync engine's GUI is reachable only through the host's loopback — pair devices over
-# an SSH tunnel, never over a public port. Caddy answers 80/443 and terminates TLS for the
-# one hostname the env file names.
+# `/vault` read-only and binds nothing it does not answer; the sync engine reaches Obsidian
+# Sync over outbound HTTPS only — it opens no listening port at all, inbound or GUI, so
+# there is nothing on this stack to tunnel into. Caddy answers 80/443 and terminates TLS
+# for the one hostname the env file names.
 #
 #   sudo ./scripts/setup.sh wiki.example.org   # once, before the first `make up`
 #   make up                                    # build + start everything
-#   make tunnel                                # the SSH command that reaches the sync GUI
+#   make sync-token                            # mint the Obsidian Sync auth (once)
 services:
   # ─── The publishing server ───
   app:
@@ -41,32 +40,41 @@ services:
       # Loopback only — health checks and curling without TLS in front.
       - "127.0.0.1:3000:3000"
 
-  # ─── The sync engine, pulling from the authoring machines ───
+  # ─── The sync engine, fed by Obsidian Sync ───
+  # obsidian-headless in the official CLI, in the community's Docker wrapper (chosen over
+  # a homegrown image for its healthcheck, secret-file support and root-dropping
+  # entrypoint). It joins the account as one more device named by DEVICE_NAME, pulls the
+  # vault in SYNC_MODE, and holds no listening port — outbound HTTPS is the whole wire.
   sync:
-    image: syncthing/syncthing:2.1.6
+    # Pinned to the obsidian-headless version the tag bakes in (0.0.14 here); the image
+    # also publishes :latest, which rebuilds as new CLI versions land.
+    image: ghcr.io/crosbyh/obsidian-headless-sync-docker:0.0.14
     container_name: anthers-obsidian-sync
     restart: unless-stopped
-    # Same uid the app runs as (the Dockerfile's `bun` user), so what the sync writes,
-    # the app reads without permission gymnastics. setup.sh chowns the directories to it.
-    user: "1000:1000"
+    env_file:
+      - ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env
     environment:
-      # Bind inside the container so the loopback-only port map below can reach the GUI;
-      # the map is what keeps the public internet away from it.
-      STGUIADDRESS: 0.0.0.0:8384
+      # Same uid the app runs as (the image's `bun` user), so what the sync writes,
+      # the app reads without permission gymnastics. The wrapper drops to these after
+      # its one-time root start has fixed ownership.
+      PUID: "1000"
+      PGID: "1000"
     volumes:
-      - type: bind
-        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/syncthing/config
-        target: /var/syncthing/config
       - type: bind
         source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
         target: /vault
-    ports:
-      - "127.0.0.1:8384:8384"
-      # The data and discovery paths. A droplet has no NAT problem; without these Syncthing
-      # still works through relays, just slower and through somebody else's server.
-      - "22000:22000/tcp"
-      - "22000:22000/udp"
-      - "21027:21027/udp"
+      # The CLI's identity — token cache, device registration, the sync database.
+      # Mounted so the device survives container recreation instead of re-enrolling
+      # under the account every time the stack restarts.
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/sync-state
+        target: /data
+      # The two credentials, mounted as files the env points *_FILE at — values in env
+      # variables show up in docker inspect; files on a 0700 directory do not.
+      - type: bind
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/secrets
+        target: /secrets
+        read_only: true
 
   # ─── TLS, and the only public door ───
   caddy:

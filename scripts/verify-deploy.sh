@@ -35,6 +35,12 @@ echo "  -> an index ships for search"
 code=$(curl -s -o /dev/null -w "%{http_code}" "https://${hostname}/api/search?q=anthers")
 [[ "${code}" == "200" ]] || die "search answered ${code}, not 200"
 
+echo "  -> the sync engine is healthy, sync current, and the vault is in place"
+sync_health=$(docker inspect --format '{{.State.Health.Status}}' anthers-obsidian-sync)
+[[ "${sync_health}" == "healthy" ]] || die "the sync engine's healthcheck is '${sync_health}', not healthy"
+# The image's healthcheck already runs `ob sync-status` for every configured vault —
+# a healthy container means a vault that is set up and answering.
+
 echo "  -> the boundary holds through the public door"
 # A path under an excluded root must answer exactly like a missing one: 404, never 403,
 # because a 403 would confirm existence. The path is an internal document's shape.

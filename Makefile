@@ -58,9 +58,11 @@ pull: ## Update the running images to their pinned versions
 restart: ## Restart the app container (the vault re-indexes on boot)
 	docker compose restart app
 
-.PHONY: tunnel
-tunnel: ## Print the SSH command that reaches the sync GUI over loopback
-	@echo "ssh -L 8384:127.0.0.1:8384 $(shell whoami)@$(WIKI_HOSTNAME)  — then open http://localhost:8384 (set WIKI_HOSTNAME=... or edit this target)"
+.PHONY: sync-token
+sync-token: ## One-time interactive login that mints the Obsidian Sync auth token
+	@echo "Logging in interactively — the printed OBSIDIAN_AUTH_TOKEN goes into"
+	@echo "  \${OBSIDIAN_DIR:-/srv/anthers-obsidian}/secrets/obsidian_token"
+	@docker run --rm -it ghcr.io/crosbyh/obsidian-headless-sync-docker:0.0.14 get-token
 
 .PHONY: status
 status: ## Health, and what the server's boundary is currently serving

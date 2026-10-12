@@ -56,7 +56,7 @@ The deployment unit is a **droplet running compose** — deliberately not a plat
   └────────────┘             └─────────────────┘               └──────────────┘
 ```
 
-The server reads its vault copy **through a read-only bind mount** and has no write path into it by design; the sync engine is the official headless Obsidian client (`obsidian-headless`) running as one more device on your Obsidian Sync account, opening no listening port — outbound HTTPS to Sync is the whole wire — and pulling in mirror-remote mode, so a server can stay current even when no authoring machine is awake.
+The server reads its vault copy **through a read-only bind mount** and has no write path into it by design; the sync engine is the official headless Obsidian client (`obsidian-headless`) in the house image — a port of the Cumulus implementation — running as one more device on your Obsidian Sync account. It opens no listening port (outbound HTTPS to Sync is the whole wire), pulls in mirror-remote mode so a server can never become a vault editor, and enforces its posture on every start.
 
 Standing one up on a fresh machine:
 
@@ -66,7 +66,7 @@ cd anthers-obsidian
 sudo ./scripts/setup.sh wiki.example.org   # lays out /srv/anthers-obsidian, fills obsidian.env
 ```
 
-The script stops there and asks for a few things by hand — DNS for the hostname, `VAULT_NAME` (your vault's exact remote name on Obsidian Sync, and the exclusion list checked against your own boundary), and the two credentials written into the secrets files: `make sync-token` mints the account token interactively, and the vault's E2E encryption password you paste yourself, from your own Sync settings. The sync engine refuses to start without them, which makes forgetting forgiving rather than silent. Then `make up`, and `scripts/verify-deploy.sh` afterward: it checks health, TLS, the page render, the sync engine's own healthcheck, and — deliberately — that an excluded path answers the same 404 a missing file gets, through the public door, because a boundary that answers 403 is a boundary that leaks existence.
+The script stops there and asks for a few things by hand, all in `obsidian.env` — `OBSIDIAN_VAULT_NAME` (your vault's exact remote name on Obsidian Sync), the exclusion belt checked against your own boundary, and the credentials: account email and password, plus the vault's E2E encryption password, which are yours to fill in that file, on the machine that owns them. Login state persists in the sync-state volume, so the credential lines do nothing once the token exists; an account with 2FA skips them entirely via `make obsidian-login`. The sync engine refuses to start without the exclusion list stated, which makes forgetting forgivable rather than silent. Then `make up`, and `scripts/verify-deploy.sh` afterward: it checks health, TLS, the page render, the sync engine's healthcheck, and — deliberately — that an excluded path answers the same 404 a missing file gets, through the public door, because a boundary that answers 403 is a boundary that leaks existence.
 
 The pinned image for a pull-based deploy is `ghcr.io/anthers-inc/anthers-obsidian` (published on tag); `make pull` updates the stack to the pinned versions without rebuilding.
 

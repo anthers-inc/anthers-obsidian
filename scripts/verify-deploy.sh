@@ -39,8 +39,9 @@ echo "  -> the sync engine is up and the vault copy is in place"
 sync_state=$(docker inspect --format '{{.State.Status}}' anthers-obsidian-sync)
 [[ "${sync_state}" == "running" ]] || die "the sync engine is '${sync_state}', not running"
 # The folder marker only exists once the folder has actually been shared and set up on
-# this side — its presence is a hand that has touched the pairing, not a guess.
-[[ -f "${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault/.stfolder" ]] \
+# this side — its presence is a hand that has touched the pairing, not a guess. It is a
+# directory Syncthing creates, so the test is -d, not -f.
+[[ -d "${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault/.stfolder" ]] \
 	|| die "the vault copy carries no .stfolder marker — the folder was never set up here"
 
 echo "  -> the boundary holds through the public door"

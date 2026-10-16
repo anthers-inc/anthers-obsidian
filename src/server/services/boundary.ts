@@ -3,13 +3,13 @@
  * The server-side publish boundary — the code-side enforcement point for "what this vault
  * publishes" against a vault copy that may still carry unpublished material.
  *
- * 🚨 **This module exists because the sync layer is not the boundary.** The deployed vault copy
- * is kept clean by the transport — an Obsidian Sync sidecar running in mirror-remote mode with
- * the excluded-folders list the env file states — which makes leakage physically impossible for
- * a correctly configured server. But that list can be mis-set, a restore can be partial, any
- * number of accidents can leave unpublished material sitting beside the reader's vault copy.
- * So the server checks paths itself, failing closed: an unpublished path answers 404 exactly
- * like a missing one and never confirms it exists.
+ * 🚨 **This module exists because the sync layer is not the boundary.** The deployment syncs a
+ * vault copy with `Internal Wiki/` excluded at the transport (Syncthing ignore patterns), which
+ * makes leakage physically impossible for a correctly configured server. But the Anthers board
+ * base (`Anthers Tasks.base`) union-matches BOTH task roots in every view, and a copy that ever
+ * carries the internal root — a mis-set ignore pattern, a transport swap, a mis-restored backup —
+ * would render internal task names to the public. So the server checks paths itself, failing
+ * closed: an unpublished path answers 404 exactly like a missing one and never confirms it exists.
  *
  * The rule (Anthers' publish boundary by location, settled 2026-10-02 in the Anthers vault's
  * agents docs): everything outside the excluded roots publishes — including the public task

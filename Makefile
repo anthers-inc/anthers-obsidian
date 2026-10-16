@@ -58,11 +58,9 @@ pull: ## Update the running images to their pinned versions
 restart: ## Restart the app container (the vault re-indexes on boot)
 	docker compose restart app
 
-.PHONY: obsidian-login
-obsidian-login: ## Interactive `ob login` in the sync engine's own identity (2FA accounts; the token persists in sync-state)
-	@echo "Log in interactively — the token persists in the sync-state volume afterwards;"
-	@echo "after this, the container needs no credential values at all."
-	@docker compose run --rm --entrypoint sh sync -c 'gosu 1000:1000 env HOME=/state ob login'
+.PHONY: tunnel
+tunnel: ## Print the SSH command that reaches the sync GUI over loopback
+	@echo "ssh -L 8384:127.0.0.1:8384 $(shell whoami)@$(WIKI_HOSTNAME)  — then open http://localhost:8384 (set WIKI_HOSTNAME=... or edit this target)"
 
 .PHONY: status
 status: ## Health, and what the server's boundary is currently serving

@@ -8,14 +8,15 @@
 # compose file and no second image.
 #
 # ⚠️ **The services on this stack are deliberately quiet about the network.** The app reads
-# `/vault` read-only and binds nothing it does not answer; the sync engine reaches Obsidian
-# Sync over outbound HTTPS only — it opens no listening port at all, inbound or GUI, so
-# there is nothing on this stack to tunnel into. Caddy answers 80/443 and terminates TLS
-# for the one hostname the env file names.
+# `/vault` read-only and binds nothing it does not answer; the sync engine is the only
+# service with an inbound data path (22000, 21027), because syncing is its whole job; and
+# the sync engine's GUI is reachable only through the host's loopback — pair devices over
+# an SSH tunnel, never over a public port. Caddy answers 80/443 and terminates TLS for the
+# one hostname the env file names.
 #
 #   sudo ./scripts/setup.sh wiki.example.org   # once, before the first `make up`
 #   make up                                    # build + start everything
-#   make obsidian-login                        # 2FA accounts: interactive login, once
+#   make tunnel                                # the SSH command that reaches the sync GUI
 services:
   # ─── The publishing server ───
   app:
@@ -40,35 +41,34 @@ services:
       # Loopback only — health checks and curling without TLS in front.
       - "127.0.0.1:3000:3000"
 
-  # ─── The sync engine, fed by Obsidian Sync ───
-  # obsidian-headless in the house image — the port of Cumulus's implementation,
-  # with the publisher's posture (mirror-remote, no config sync, a stated
-  # exclusion belt) enforced in the entrypoint. It joins the account as one more
-  # device and holds no listening port: outbound HTTPS to Sync is the whole wire.
+  # ─── The sync engine, pulling from the authoring machines ───
+  # Syncthing, pinned. It is the folder's only writer and the app reads its output; the
+  # GUI answers on the loopback port map only, so pairing happens over an SSH tunnel.
   sync:
-    build: ./obsidian-sync
-    image: anthers-obsidian-sync:latest
+    image: syncthing/syncthing:2.1.6
     container_name: anthers-obsidian-sync
     restart: unless-stopped
-    env_file:
-      - ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env
-    healthcheck:
-      # The image has none of its own; the app's deploy verification reads this.
-      test: ["CMD", "ob", "sync-status", "--path", "/vaults/Anthers-Wiki"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
+    # Same uid the app runs as (the Dockerfile's `bun` user), so what the sync writes,
+    # the app reads without permission gymnastics. setup.sh chowns the directories to it.
+    user: "1000:1000"
+    environment:
+      # Bind inside the container so the loopback-only port map below can reach the GUI;
+      # the map is what keeps the public internet away from it.
+      STGUIADDRESS: 0.0.0.0:8384
     volumes:
       - type: bind
-        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
-        target: /vaults/Anthers-Wiki
-      # The CLI's identity — token cache, device registration, the sync database.
-      # Mounted so the device survives container recreation instead of
-      # re-enrolling under the account every time the stack restarts.
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/syncthing/config
+        target: /var/syncthing/config
       - type: bind
-        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/sync-state
-        target: /state
+        source: ${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault
+        target: /vault
+    ports:
+      - "127.0.0.1:8384:8384"
+      # The data and discovery paths. A droplet has no NAT problem; without these Syncthing
+      # still works through relays, just slower and through somebody else's server.
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
 
   # ─── TLS, and the only public door ───
   caddy:

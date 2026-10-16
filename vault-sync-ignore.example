@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# The ignore list the publishing host's sync folder carries.
+#
+# 🚨 **This is the sync-layer half of the publish boundary, and it is belt to the server's
+# suspenders — both wear it.** The server refuses to serve anything outside its publish
+# boundary even if this file were empty; this file is what keeps the internal material
+# from ever *arriving* on a machine whose only job is to be public. Two independent
+# enforcement points, because the consequences are asymmetric: the boundary refusing at
+# serve time is one bug away from a leak; the bytes never landing is not a bug away from
+# anything.
+#
+# ⚠️ **Keep this file and the boundary's defaults in step.** The boundary decides what the
+# *server* will serve; this decides what the *folder* will hold. If you widen one and not
+# the other, the wider one is your true boundary — write that down rather than discovering
+# it in a log.
+#
+# Syntax: Syncthing's ignore patterns (https://docs.syncthing.net/users/ignoring), one
+# per line. `(?d)` marks a pattern safe to delete files over — everything here is, because
+# nothing on this machine is authoritative.
+
+// The publish boundary's excluded roots.
+(?d)/Internal Wiki
+(?d)/90-99 Agents
+// 00-09 Metafiles: everything except the task roots — the tasks ARE published copy.
+// ⚠️ Two lines only: the star excludes the folder's direct children, the negation
+// re-includes the tasks root, and everything UNDER it was never matched by the star in
+// the first place. Do not add a "/01 Tasks/*" exclude here — it eats the task notes.
+(?d)/00-09 Metafiles/*
+!/00-09 Metafiles/01 Tasks
+// Obsidian, sync and agent machinery.
+(?d)/.obsidian
+(?d)/.agents
+(?d)/.trash
+(?d)/.stfolder
+(?d)/.stversions
+// Root-level base files other than the board (the server also refuses them).
+(?d)/*.base
+!/Anthers Tasks.base

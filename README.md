@@ -50,13 +50,13 @@ The boundary defaults are Anthers' publish decision — everything outside those
 The deployment unit is a **droplet running compose** — deliberately not a platform-specific app shape, because this server is a standalone thing: whoever runs it (Anthers on a DigitalOcean droplet, or you on any box with Docker) runs the same three containers.
 
 ```text
-  ┌────────────┐  Obsidian   ┌─────────────────┐   read-only   ┌──────────────┐
-  │ your vault  │  Sync (E2EE)│ the sync engine  │────────────→ │ the server   │
-│ (any device) │  outbound → │ (mirror-remote)  │   /vault:ro  │ + Caddy :443 │
-  └────────────┘             └─────────────────┘               └──────────────┘
+  ┌────────────┐   sync    ┌─────────────────┐   read-only   ┌──────────────┐
+  │ your vault  │ ────────→ │ syncthing       │ ────────────→ │ the server   │
+│ (authoring)  │  22000    │ (pull-only copy) │   /vault:ro  │ + Caddy :443 │
+  └────────────┘           └─────────────────┘               └──────────────┘
 ```
 
-The server reads its vault copy **through a read-only bind mount** and has no write path into it by design; the sync engine is the official headless Obsidian client (`obsidian-headless`) in the house image — a port of the Cumulus implementation — running as one more device on your Obsidian Sync account. It opens no listening port (outbound HTTPS to Sync is the whole wire), pulls in mirror-remote mode so a server can never become a vault editor, and enforces its posture on every start.
+The server reads its vault copy **through a read-only bind mount** and has no write path into it by design; the sync engine is Syncthing with the folder set **Receive Only** on this side, so the publishing host can never edit the vault even by accident; and the sync engine's GUI is bound to the host's loopback only, so pairing happens over an SSH tunnel (`make tunnel`), never a public port.
 
 Standing one up on a fresh machine:
 
@@ -66,7 +66,7 @@ cd anthers-obsidian
 sudo ./scripts/setup.sh wiki.example.org   # lays out /srv/anthers-obsidian, fills obsidian.env
 ```
 
-The script stops there and asks for a few things by hand, all in `obsidian.env` — `OBSIDIAN_VAULT_NAME` (your vault's exact remote name on Obsidian Sync), the exclusion belt checked against your own boundary, and the credentials: account email and password, plus the vault's E2E encryption password, which are yours to fill in that file, on the machine that owns them. Login state persists in the sync-state volume, so the credential lines do nothing once the token exists; an account with 2FA skips them entirely via `make obsidian-login`. The sync engine refuses to start without the exclusion list stated, which makes forgetting forgivable rather than silent. Then `make up`, and `scripts/verify-deploy.sh` afterward: it checks health, TLS, the page render, the sync engine's healthcheck, and — deliberately — that an excluded path answers the same 404 a missing file gets, through the public door, because a boundary that answers 403 is a boundary that leaks existence.
+The script generates everything and installs the sync ignore list (`vault-sync-ignore.example`) as the vault copy's `.stignore` directly, so it wants two things by hand: DNS for the hostname, and then, after `make up`, the pairing — your authoring machine joins through `make tunnel` and shares the vault set **Send Only** on the authoring side. `scripts/verify-deploy.sh` afterward checks health, TLS, the page render, and — deliberately — that an excluded path answers the same 404 a missing file gets, through the public door, because a boundary that answers 403 is a boundary that leaks existence.
 
 The pinned image for a pull-based deploy is `ghcr.io/anthers-inc/anthers-obsidian` (published on tag); `make pull` updates the stack to the pinned versions without rebuilding.
 

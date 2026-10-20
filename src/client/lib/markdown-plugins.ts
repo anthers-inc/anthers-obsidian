@@ -2,6 +2,7 @@
 import type MarkdownIt from "markdown-it";
 import type StateInline from "markdown-it/lib/rules_inline/state_inline.mjs";
 import { API_BASE } from "./api";
+import { slugifyHeading } from "./heading-slug";
 import type { ResolveMap } from "./markdown";
 
 /**
@@ -54,7 +55,7 @@ export function wikilinkPlugin(md: MarkdownIt, resolveMap: ResolveMap, slugByPat
     // Parse hash: target#section
     const hashIdx = raw.indexOf("#");
     const target = hashIdx !== -1 ? raw.substring(0, hashIdx).trim() : raw.trim();
-    const section = hashIdx !== -1 ? raw.substring(hashIdx) : "";
+    const section = hashIdx !== -1 ? raw.substring(hashIdx + 1).trim() : "";
 
     // Resolve to a path, then the path to its public slug
     const resolved = target ? resolveLink(target, resolveMap) : null;
@@ -62,7 +63,11 @@ export function wikilinkPlugin(md: MarkdownIt, resolveMap: ResolveMap, slugByPat
 
     const tokenOpen = state.push("link_open", "a", 1);
     if (slug) {
-      tokenOpen.attrSet("href", `/${slug}${section ? encodeURIComponent(section) : ""}`);
+      // The section is the heading as Obsidian spells it, and the href carries the anchor
+      // the heading actually answers to. `encodeURIComponent(section)` used to put an
+      // encoded `#` in the path, which resolved to no route at all.
+      const fragment = section ? `#${slugifyHeading(section)}` : "";
+      tokenOpen.attrSet("href", `/${slug}${fragment}`);
       tokenOpen.attrSet("class", "wikilink");
     } else {
       // Inert: an anchor with no href answers nothing and follows nothing.

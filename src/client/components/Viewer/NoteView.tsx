@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNoteContent } from "../../hooks/useNoteContent";
 import { useResolveMap } from "../../hooks/useResolveMap";
@@ -43,6 +44,22 @@ export default function NoteView() {
 
 	const { data: note, isLoading, error } = useNoteContent(notePath);
 	const { data: resolveMap } = useResolveMap();
+
+	// A fragment lands once the note has rendered. A direct load carrying `#section` tried
+	// the fragment against an empty document, before React had mounted anything, and a
+	// client-side navigation does not retry it at all — so the heading's id is only half
+	// the mechanism and this is the other half. A malformed address is a reason to leave
+	// the reader at the top, never to fail the page.
+	useEffect(() => {
+		if (!location.hash) return;
+		let id: string;
+		try {
+			id = decodeURIComponent(location.hash.slice(1));
+		} catch {
+			return;
+		}
+		document.getElementById(id)?.scrollIntoView();
+	}, [location.hash, notePath, note]);
 
 	if (!slugMapLoaded || (notePath && isLoading)) {
 		return (

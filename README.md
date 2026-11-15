@@ -40,7 +40,7 @@ bun run typecheck
 | `PORT` | `3000` | Listen port |
 | `HIDE_FOLDERS` | `.obsidian,.git,.trash,.stversions,.stfolder,.claude,.venv` | Dot-machinery never shown, independent of the publish boundary |
 | `PUBLISH_EXCLUDE` | `Internal Wiki,90-99 Agents,00-09 Metafiles` | Vault-relative directory prefixes that never publish |
-| `PUBLISH_INCLUDE` | `00-09 Metafiles/01 Tasks` | Prefixes that publish despite an excluded ancestor (strictly-longer wins) |
+| `PUBLISH_INCLUDE` | `00-09 Metafiles/01 Tasks`, `00-09 Metafiles/00 Attachments/Published` | Prefixes that publish despite an excluded ancestor (strictly-longer wins) |
 | `PUBLISH_BASE_FILES` | `Anthers Tasks.base` | The only `.base` files served — a base enumerates, so none publishes unlisted |
 
 The boundary defaults are Anthers' publish decision — everything outside those roots publishes. Another operator publishing from this server states their own boundary in the environment rather than inheriting ours.

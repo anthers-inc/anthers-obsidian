@@ -19,8 +19,10 @@
  *    (agent machinery), and `00-09 Metafiles` (vault machinery — but see (2)).
  * 2. **Includes override excludes by specificity** (`PUBLISH_INCLUDE`): `00-09 Metafiles/01 Tasks`
  *    is longer than the `00-09 Metafiles` exclude that contains it, so the public task notes
- *    publish while attachments and templates beside them do not. A longer include prefix always
- *    wins; an equal or shorter one never does.
+ *    publish while attachments and templates beside them do not. `00-09 Metafiles/00 Attachments/
+ *    Published` does the same job one level down: a reference page's screenshots publish from a
+ *    folder that says so, while every other attachment in the same store stays internal. A longer
+ *    include prefix always wins; an equal or shorter one never does.
  * 3. **Bases are allowlisted** (`PUBLISH_BASE_FILES`): a base view *enumerates* — it can surface
  *    rows the folder layout would have hidden — so an unlisted `.base` never publishes. The one
  *    Anthers allows is `Anthers Tasks.base`, the public board, and only because the synced copy
@@ -35,7 +37,9 @@
 const EXCLUDE = parsePrefixList(process.env.PUBLISH_EXCLUDE ?? "Internal Wiki,90-99 Agents,00-09 Metafiles");
 
 /** Comma-separated vault-relative directory prefixes that publish despite an excluded ancestor — only when longer than the exclude they override. */
-const INCLUDE = parsePrefixList(process.env.PUBLISH_INCLUDE ?? "00-09 Metafiles/01 Tasks");
+const INCLUDE = parsePrefixList(
+	process.env.PUBLISH_INCLUDE ?? "00-09 Metafiles/01 Tasks,00-09 Metafiles/00 Attachments/Published",
+);
 
 /** Comma-separated vault-relative file paths — the only `.base` files this server will serve. */
 const BASE_ALLOWLIST = parsePrefixList(process.env.PUBLISH_BASE_FILES ?? "Anthers Tasks.base");
@@ -90,8 +94,8 @@ export function isPublishedPath(relativePath: string): boolean {
 /**
  * Whether a directory can be pruned from a walk: true when it, or anything under it,
  * could contain a published path. Used to cut excluded subtrees early, including the
- * partially-published one (`00-09 Metafiles` stays walkable only because `01 Tasks`
- * publishes inside it; `00-09 Metafiles/00 Attachments` prunes whole).
+ * partially-published ones (`00-09 Metafiles` stays walkable because `01 Tasks` publishes
+ * inside it, and so does `00-09 Metafiles/00 Attachments`, because `Published/` does).
  */
 export function canContainPublished(dirPath: string): boolean {
 	const d = normalizePath(dirPath);

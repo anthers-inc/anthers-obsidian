@@ -37,6 +37,14 @@ describe("boundary — the default publish shape", () => {
 		expect(isPublishedPath("00-09 Metafiles/00 Attachments/Pasted image 20260917192658.png")).toBe(false);
 	});
 
+	test("a published attachment publishes from inside the excluded attachment store", () => {
+		expect(
+			isPublishedPath("00-09 Metafiles/00 Attachments/Published/First Light — Released.png"),
+		).toBe(true);
+		expect(canContainPublished("00-09 Metafiles/00 Attachments")).toBe(true);
+		expect(canContainPublished("00-09 Metafiles/00 Attachments/Published")).toBe(true);
+	});
+
 	test("Internal Wiki never publishes, at any depth, including its mirror-shaped task roots", () => {
 		expect(isPublishedPath("Internal Wiki/10-19 Governance & Records/13 - Compliance Calendar.md")).toBe(false);
 		expect(isPublishedPath("Internal Wiki/00-09 Metafiles/01 Tasks/Active/An Internal Task.md")).toBe(false);
@@ -75,9 +83,10 @@ describe("boundary — directory pruning", () => {
 		expect(canContainPublished("90-99 Agents")).toBe(false);
 	});
 
-	test("the mixed folder stays walkable; its unpublished child prunes", () => {
+	test("the mixed folders stay walkable; their unpublished children prune", () => {
 		expect(canContainPublished("00-09 Metafiles")).toBe(true);
-		expect(canContainPublished("00-09 Metafiles/00 Attachments")).toBe(false);
+		expect(canContainPublished("00-09 Metafiles/00 Attachments")).toBe(true);
+		expect(canContainPublished("00-09 Metafiles/00 Attachments/Drafts")).toBe(false);
 		expect(canContainPublished("00-09 Metafiles/01 Tasks")).toBe(true);
 	});
 

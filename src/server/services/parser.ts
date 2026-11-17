@@ -164,6 +164,15 @@ export async function buildFullResolveMap(notes: ParsedNote[]): Promise<ResolveM
         const key = entry.name.toLowerCase();
         if (!map[key]) map[key] = [];
         map[key].push(relPath);
+
+        // Index the full path too, mirroring the note branch above. A fully qualified embed
+        // (`![[folder/image.png]]`) otherwise resolves to nothing and the client falls back
+        // to encoding the literal, which turns every slash into %2F.
+        const fullPath = relPath.toLowerCase();
+        if (fullPath !== key) {
+          if (!map[fullPath]) map[fullPath] = [];
+          map[fullPath].push(relPath);
+        }
       }
     }
   }

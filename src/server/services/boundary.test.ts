@@ -112,10 +112,12 @@ describe("boundary — through the actual routes", () => {
 	beforeAll(async () => {
 		process.env.VAULT_PATH = FIXTURE;
 		await mkdir(join(FIXTURE, "00-09 Metafiles/01 Tasks/Active"), { recursive: true });
+		await mkdir(join(FIXTURE, "00-09 Metafiles/00 Attachments/Published"), { recursive: true });
 		await mkdir(join(FIXTURE, "Internal Wiki"), { recursive: true });
 		await writeFile(join(FIXTURE, "Anthers Overview.md"), "A public page");
 		await writeFile(join(FIXTURE, "00-09 Metafiles/01 Tasks/Active/Public Task.md"), "A public task");
 		await writeFile(join(FIXTURE, "00-09 Metafiles/notes-attachment.txt"), "machinery");
+		await writeFile(join(FIXTURE, "00-09 Metafiles/00 Attachments/Published/screenshot.png"), "not a real png");
 		await writeFile(join(FIXTURE, "Internal Wiki/Internal Doc.md"), "internal");
 		await writeFile(join(FIXTURE, "Anthers Tasks.base"), "{}");
 		// Dynamic import after the env is set — vault.ts reads VAULT_PATH at module scope.
@@ -151,6 +153,17 @@ describe("boundary — through the actual routes", () => {
 		expect(names).toContain("01 Tasks");
 		expect(names).toContain("Anthers Tasks.base");
 		expect(names).not.toContain("Internal Wiki");
+	});
+
+	test("a fully qualified attachment embed resolves by its own path", async () => {
+		// The route's map is populated by the build, which `import.meta.main` skips in tests.
+		const { rebuildAll } = await import("../rebuild.js");
+		await rebuildAll();
+		const res = await app.fetch(new Request("http://localhost/api/files/resolve-map"));
+		const map = (await res.json()) as Record<string, string[]>;
+		expect(map["00-09 metafiles/00 attachments/published/screenshot.png"]).toEqual([
+			"00-09 Metafiles/00 Attachments/Published/screenshot.png",
+		]);
 	});
 
 	test("path traversal is refused with the same 404 discipline", async () => {

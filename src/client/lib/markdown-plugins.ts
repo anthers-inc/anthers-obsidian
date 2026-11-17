@@ -117,7 +117,10 @@ export function embedPlugin(md: MarkdownIt, resolveMap: ResolveMap) {
 
     if (isImage) {
       const resolved = resolveLink(target, resolveMap);
-      const imgPath = resolved ? encodePath(resolved) : encodeURIComponent(target);
+      // Preserve the path's slashes in the fallback. `encodeURIComponent` on the whole
+      // target turns them into %2F, a URL shape some blockers refuse and caches can pin
+      // to an old 404; a path that failed to resolve is still a path.
+      const imgPath = resolved ? encodePath(resolved) : encodePath(target);
       const token = state.push("image", "img", 0);
       token.attrSet("src", `${API_BASE}/api/files/${imgPath}`);
       token.attrSet("alt", alt);

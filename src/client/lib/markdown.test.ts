@@ -41,3 +41,29 @@ describe("a wikilink's section becomes the heading's anchor", () => {
     expect(md.render("[[Page]]")).toContain('href="/page"');
   });
 });
+
+describe("an image embed", () => {
+  const resolveMap = {
+    "00-09 metafiles/00 attachments/published/screenshot.png": [
+      "00-09 Metafiles/00 Attachments/Published/screenshot.png",
+    ],
+  };
+
+  it("resolves a fully qualified target to its own path, with slashes intact", () => {
+    const md = createMarkdownRenderer(resolveMap);
+    const html = md.render("![[00-09 Metafiles/00 Attachments/Published/screenshot.png|The screen]]");
+    expect(html).toContain(
+      'src="/api/files/00-09%20Metafiles/00%20Attachments/Published/screenshot.png"',
+    );
+    expect(html).not.toContain("%2F");
+  });
+
+  it("keeps the slashes in an unresolved target rather than encoding the whole path", () => {
+    const md = createMarkdownRenderer({});
+    const html = md.render("![[00-09 Metafiles/00 Attachments/Published/missing.png|The screen]]");
+    expect(html).toContain(
+      'src="/api/files/00-09%20Metafiles/00%20Attachments/Published/missing.png"',
+    );
+    expect(html).not.toContain("%2F");
+  });
+});

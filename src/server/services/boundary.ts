@@ -33,16 +33,18 @@
  * server states their own boundary rather than inheriting ours.
  */
 
-/** Comma-separated vault-relative directory prefixes that never publish. */
-const EXCLUDE = parsePrefixList(process.env.PUBLISH_EXCLUDE ?? "Internal Wiki,90-99 Agents,00-09 Metafiles");
+/** Comma-separated vault-relative directory prefixes that never publish, unless a longer include overrides them. */
+export const DEFAULT_PUBLISH_EXCLUDE = "Internal Wiki,90-99 Agents,00-09 Metafiles";
 
 /** Comma-separated vault-relative directory prefixes that publish despite an excluded ancestor — only when longer than the exclude they override. */
-const INCLUDE = parsePrefixList(
-	process.env.PUBLISH_INCLUDE ?? "00-09 Metafiles/01 Tasks,00-09 Metafiles/00 Attachments/Published",
-);
+export const DEFAULT_PUBLISH_INCLUDE = "00-09 Metafiles/01 Tasks,00-09 Metafiles/00 Attachments/Published";
 
 /** Comma-separated vault-relative file paths — the only `.base` files this server will serve. */
-const BASE_ALLOWLIST = parsePrefixList(process.env.PUBLISH_BASE_FILES ?? "Anthers Tasks.base");
+export const DEFAULT_PUBLISH_BASE_FILES = "Anthers Tasks.base";
+
+const EXCLUDE = parsePrefixList(process.env.PUBLISH_EXCLUDE ?? DEFAULT_PUBLISH_EXCLUDE);
+const INCLUDE = parsePrefixList(process.env.PUBLISH_INCLUDE ?? DEFAULT_PUBLISH_INCLUDE);
+const BASE_ALLOWLIST = parsePrefixList(process.env.PUBLISH_BASE_FILES ?? DEFAULT_PUBLISH_BASE_FILES);
 
 function parsePrefixList(value: string): string[] {
 	return value

@@ -13,10 +13,10 @@ set -euo pipefail
 die() { echo "  -> FAIL: $*" >&2; exit 1; }
 
 hostname="${1:-}"
+envfile="${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env"
 
 # Without a hostname argument, read it from the env file the setup script wrote.
 if [[ -z "${hostname}" ]]; then
-	envfile="${OBSIDIAN_DIR:-/srv/anthers-obsidian}/obsidian.env"
 	[[ -e "${envfile}" ]] || die "no hostname argument and no env file at ${envfile}"
 	hostname=$(grep '^WIKI_HOSTNAME=' "${envfile}" | cut -d= -f2)
 fi
@@ -43,6 +43,15 @@ sync_state=$(docker inspect --format '{{.State.Status}}' anthers-obsidian-sync)
 # directory Syncthing creates, so the test is -d, not -f.
 [[ -d "${OBSIDIAN_DIR:-/srv/anthers-obsidian}/vault/.stfolder" ]] \
 	|| die "the vault copy carries no .stfolder marker — the folder was never set up here"
+
+echo "  -> the deploy's publish boundary includes the published images"
+# The server's defaults include this path, but an env override that predates it is
+# narrower than the code and silently 404s every screenshot. Only an explicit override
+# is checked; an unset one inherits the default and is already correct.
+if grep -q '^PUBLISH_INCLUDE=' "${envfile}"; then
+	grep -q '^PUBLISH_INCLUDE=.*00-09 Metafiles/00 Attachments/Published' "${envfile}" \
+		|| die "PUBLISH_INCLUDE in ${envfile} omits 00-09 Metafiles/00 Attachments/Published"
+fi
 
 echo "  -> the boundary holds through the public door"
 # A path under an excluded root must answer exactly like a missing one: 404, never 403,

@@ -3,4 +3,6 @@ build/
 .obsidian/
 .env
 .test-vault-fixture/
+.worktrees/
+.tmp/
 *.log

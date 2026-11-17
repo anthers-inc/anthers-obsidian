@@ -16,7 +16,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { isPublishedPath, canContainPublished, normalizePath } from "./boundary.js";
+import { isPublishedPath, canContainPublished, normalizePath, DEFAULT_PUBLISH_INCLUDE } from "./boundary.js";
 
 describe("boundary — the default publish shape", () => {
 	test("a public reference page publishes", () => {
@@ -156,5 +156,28 @@ describe("boundary — through the actual routes", () => {
 	test("path traversal is refused with the same 404 discipline", async () => {
 		const res = await app.fetch(new Request("http://localhost/api/files/..%2F..%2Fetc%2Fpasswd"));
 		expect([403, 404]).toContain(res.status);
+	});
+});
+
+describe("boundary — the sync ignore list stays in step", () => {
+	/**
+	 * 🚨 The failure this catches: the server added `00-09 Metafiles/00 Attachments/Published`
+	 * to `PUBLISH_INCLUDE`, but the sync-side ignore list still excluded the whole attachment
+	 * store. The server would have served the images; they never arrived, and every guide
+	 * rendered without its screenshots. Every default include needs a negation for itself and
+	 * for each ancestor below the excluded root, above the general exclude that would swallow it.
+	 */
+	test("every default include is re-included above the exclude that would swallow it", async () => {
+		const ignore = await Bun.file(new URL("../../../vault-sync-ignore.example", import.meta.url)).text();
+		const patterns = new Set(ignore.split("\n").map((line) => line.trim()));
+		for (const include of DEFAULT_PUBLISH_INCLUDE.split(",")) {
+			const prefix = include.trim();
+			const segments = prefix.split("/");
+			for (let depth = 2; depth <= segments.length; depth++) {
+				const dir = segments.slice(0, depth).join("/");
+				expect(patterns).toContain(`!/${dir}`);
+			}
+			expect(patterns).toContain(`!/${prefix}/**`);
+		}
 	});
 });

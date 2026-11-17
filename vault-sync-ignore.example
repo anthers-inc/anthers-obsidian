@@ -23,11 +23,16 @@
 // pattern safe to delete files over — everything here is, because nothing on this machine
 // is authoritative.
 
-// The re-inclusions first: the public task root (the board is published copy) and the
-// board base (the only .base file the server allowlists).
+// The re-inclusions first: the public task root (the board is published copy), the board
+// base (the only .base file the server allowlists), and the published images the guides
+// embed. Every parent on the way down needs its own negation, because an ignored
+// directory's children stay ignored even when a deeper path is negated.
 !/00-09 Metafiles/01 Tasks
 !/00-09 Metafiles/01 Tasks/**
 !/Anthers Tasks.base
+!/00-09 Metafiles/00 Attachments
+!/00-09 Metafiles/00 Attachments/Published
+!/00-09 Metafiles/00 Attachments/Published/**
 
 (?d)/Internal Wiki
 (?d)/90-99 Agents
